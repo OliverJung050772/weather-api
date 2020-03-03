@@ -2,35 +2,109 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using weather_api;
+using weather_api.Models;
 
 namespace weather_api.Controllers
 {
+    [Route("api/[controller]")]
     [ApiController]
-    [Route("[controller]")]
-    public class TemperaturesController : ControllerBase 
+    public class TemperaturesController : ControllerBase
     {
-        private readonly ILogger<TemperaturesController> _logger;
+        private readonly TemperatureContext _context;
 
-        public TemperaturesController(ILogger<TemperaturesController> logger)
+        public TemperaturesController(TemperatureContext context)
         {
-            _logger = logger;
+            _context = context;
         }
 
-        // GET: /Temperatures
+        // GET: api/Temperatures
         [HttpGet]
-        public IEnumerable<Temperature> Get()
+        public async Task<ActionResult<IEnumerable<Temperature>>> GetTemperatures()
         {
-            // return mock-data
-            var rng = new Random();
-            return Enumerable.Range(1, 5).Select(index => new Temperature
+            return await _context.Temperatures.ToListAsync();
+        }
+
+        // GET: api/Temperatures/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Temperature>> GetTemperature(long id)
+        {
+            var temperature = await _context.Temperatures.FindAsync(id);
+
+            if (temperature == null)
             {
-                TimeStamp = index,
-                Value = (float)(rng.Next(-20, 55))
-            })
-            .ToArray();
+                return NotFound();
+            }
+
+            return temperature;
+        }
+
+        // PUT: api/Temperatures/5
+        // To protect from overposting attacks, please enable the specific properties you want to bind to, for
+        // more details see https://aka.ms/RazorPagesCRUD.
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutTemperature(long id, Temperature temperature)
+        {
+            if (id != temperature.Id)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(temperature).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!TemperatureExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        // POST: api/Temperatures
+        // To protect from overposting attacks, please enable the specific properties you want to bind to, for
+        // more details see https://aka.ms/RazorPagesCRUD.
+        [HttpPost]
+        public async Task<ActionResult<Temperature>> PostTemperature(Temperature temperature)
+        {
+            _context.Temperatures.Add(temperature);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetTemperature), new { id = temperature.Id }, temperature);
+        }
+
+        // DELETE: api/Temperatures/5
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<Temperature>> DeleteTemperature(long id)
+        {
+            var temperature = await _context.Temperatures.FindAsync(id);
+            if (temperature == null)
+            {
+                return NotFound();
+            }
+
+            _context.Temperatures.Remove(temperature);
+            await _context.SaveChangesAsync();
+
+            return temperature;
+        }
+
+        private bool TemperatureExists(long id)
+        {
+            return _context.Temperatures.Any(e => e.Id == id);
         }
     }
-   
 }

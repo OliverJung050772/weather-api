@@ -2,35 +2,109 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using weather_api;
+using weather_api.Models;
 
 namespace weather_api.Controllers
 {
+    [Route("api/[controller]")]
     [ApiController]
-    [Route("[controller]")]
-    public class PressuresController : ControllerBase 
+    public class PressuresController : ControllerBase
     {
-        private readonly ILogger<PressuresController> _logger;
+        private readonly PressureContext _context;
 
-        public PressuresController(ILogger<PressuresController> logger)
+        public PressuresController(PressureContext context)
         {
-            _logger = logger;
+            _context = context;
         }
 
-        // GET: /Pressures
+        // GET: api/Pressures
         [HttpGet]
-        public IEnumerable<Pressure> Get()
+        public async Task<ActionResult<IEnumerable<Pressure>>> GetPressures()
         {
-            // return mock-data for barometic pressure
-            var rng = new Random();
-            return Enumerable.Range(1, 10).Select(index => new Pressure
+            return await _context.Pressures.ToListAsync();
+        }
+
+        // GET: api/Pressures/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Pressure>> GetPressure(long id)
+        {
+            var pressure = await _context.Pressures.FindAsync(id);
+
+            if (pressure == null)
             {
-                TimeStamp = index + 1000,
-                Value = (float)(rng.Next(1080, 1150))
-            })
-            .ToArray();
+                return NotFound();
+            }
+
+            return pressure;
+        }
+
+        // PUT: api/Pressures/5
+        // To protect from overposting attacks, please enable the specific properties you want to bind to, for
+        // more details see https://aka.ms/RazorPagesCRUD.
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutPressure(long id, Pressure pressure)
+        {
+            if (id != pressure.Id)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(pressure).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!PressureExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        // POST: api/Pressures
+        // To protect from overposting attacks, please enable the specific properties you want to bind to, for
+        // more details see https://aka.ms/RazorPagesCRUD.
+        [HttpPost]
+        public async Task<ActionResult<Pressure>> PostPressure(Pressure pressure)
+        {
+            _context.Pressures.Add(pressure);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetPressure), new { id = pressure.Id }, pressure);
+        }
+
+        // DELETE: api/Pressures/5
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<Pressure>> DeletePressure(long id)
+        {
+            var pressure = await _context.Pressures.FindAsync(id);
+            if (pressure == null)
+            {
+                return NotFound();
+            }
+
+            _context.Pressures.Remove(pressure);
+            await _context.SaveChangesAsync();
+
+            return pressure;
+        }
+
+        private bool PressureExists(long id)
+        {
+            return _context.Pressures.Any(e => e.Id == id);
         }
     }
-   
 }
