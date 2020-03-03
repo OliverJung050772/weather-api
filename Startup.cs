@@ -29,6 +29,8 @@ namespace weather_api
         {
             services.AddDbContext<TemperatureContext>(opt =>
                 opt.UseInMemoryDatabase("TemperatureList"));
+            services.AddDbContext<PressureContext>(opt =>
+                opt.UseInMemoryDatabase("PressureList"));
             services.AddControllers();
         }
 

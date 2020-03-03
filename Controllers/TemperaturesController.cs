@@ -18,6 +18,7 @@ namespace weather_api.Controllers
             _logger = logger;
         }
 
+        // GET: /Temperatures
         [HttpGet]
         public IEnumerable<Temperature> Get()
         {
